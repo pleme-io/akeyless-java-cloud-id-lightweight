@@ -1,12 +1,12 @@
 # akeyless-java-cloud-id (lightweight)
 
-A lightweight Java 8 library that retrieves CloudId for authenticating with Akeyless using cloud authorization providers (AWS IAM, Azure AD Managed Identity, GCP Workload Identity). It mirrors the structure of the upstream project and uses only JDK HttpURLConnection for HTTP. JSON handling uses Jackson (bundled as a dependency).
+A lightweight Java 17 library that retrieves CloudId for authenticating with Akeyless using cloud authorization providers (AWS IAM, Azure AD Managed Identity, GCP Workload Identity). It mirrors the structure of the upstream project and uses only JDK HttpURLConnection for HTTP. JSON handling uses Jackson (bundled as a dependency).
 
 - Reference structure: [akeyless-java-cloud-id](https://github.com/akeylesslabs/akeyless-java-cloud-id/)
 
 ## Requirements
 
-- Java 8+
+- Java 17+
 - Maven or Gradle
 
 ## Installation
