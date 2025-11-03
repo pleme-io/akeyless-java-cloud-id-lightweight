@@ -1,14 +1,12 @@
 package io.akeyless.cloudid.http;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -25,48 +23,36 @@ public final class JdkHttpTransport implements HttpTransport {
 
     private HttpResponse execute(String method, String urlString, Map<String, String> headers, String body,
                                  int connectTimeoutMs, int readTimeoutMs) throws IOException {
-        HttpURLConnection conn = (HttpURLConnection) new URL(urlString).openConnection();
-        conn.setRequestMethod(method);
-        conn.setConnectTimeout(connectTimeoutMs);
-        conn.setReadTimeout(readTimeoutMs);
-        conn.setInstanceFollowRedirects(false);
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(urlString))
+                .timeout(Duration.ofMillis(readTimeoutMs));
 
         if (headers != null) {
             for (Map.Entry<String, String> e : headers.entrySet()) {
-                conn.setRequestProperty(e.getKey(), e.getValue());
+                builder.header(e.getKey(), e.getValue());
             }
         }
 
-        if (body != null && !body.isEmpty()) {
-            conn.setDoOutput(true);
-            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-            conn.setFixedLengthStreamingMode(bytes.length);
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(bytes);
-            }
+        if ("PUT".equalsIgnoreCase(method)) {
+            builder.method("PUT", java.net.http.HttpRequest.BodyPublishers.ofString(body == null ? "" : body, StandardCharsets.UTF_8));
+        } else {
+            builder.GET();
         }
 
-        int status = conn.getResponseCode();
-        InputStream is = status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream();
-        String responseBody = readFully(is);
-        Map<String, List<String>> responseHeaders = new HashMap<String, List<String>>(conn.getHeaderFields());
-        conn.disconnect();
-        return new HttpResponse(status, responseBody, responseHeaders);
-    }
-
-    private static String readFully(InputStream is) throws IOException {
-        if (is == null) {
-            return "";
+        try {
+            java.net.http.HttpResponse<String> response = client.send(builder.build(), BodyHandlers.ofString(StandardCharsets.UTF_8));
+            int status = response.statusCode();
+            Map<String, List<String>> responseHeaders = response.headers().map();
+            String responseBody = response.body();
+            return new HttpResponse(status, responseBody, responseHeaders);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
         }
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-            }
-        }
-        return sb.toString();
     }
 }
-
-
