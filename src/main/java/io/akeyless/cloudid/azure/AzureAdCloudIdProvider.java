@@ -8,6 +8,7 @@ import io.akeyless.cloudid.util.JsonExtractors;
 import io.akeyless.cloudid.util.Utils;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +38,6 @@ public final class AzureAdCloudIdProvider implements CloudIdProvider {
         if (token == null || token.isEmpty()) {
             throw new IOException("Azure MI token response missing access_token");
         }
-        return token;
+        return Base64.getEncoder().encodeToString(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 }

@@ -31,7 +31,7 @@ public final class GcpCloudIdProvider implements CloudIdProvider {
         headers.put("Metadata-Flavor", "Google");
         HttpResponse res = http.get(IDENTITY_URL, headers, Utils.CONNECT_TIMEOUT_MS, Utils.READ_TIMEOUT_MS);
         if (res.getStatusCode() / 100 != 2) {
-            throw new IOException("Failed to get GCP identity token: HTTP " + res.getStatusCode() + ": " + res.getBody());
+            throw new IOException("Failed to get GCP identity token: HTTP " + res.getStatusCode());
         }
         String token = res.getBody();
         if (token == null || token.isEmpty()) {
