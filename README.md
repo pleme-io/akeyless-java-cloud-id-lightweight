@@ -44,33 +44,51 @@ To use the Akeyless Java SDK in tandem:
 ## Usage
 
 ```java
-import io.akeyless.cloudid.CloudIdProvider;
+import io.akeyless.client.ApiException;
 import io.akeyless.cloudid.CloudProviderFactory;
+import io.akeyless.cloudid.CloudIdProvider;
 
-String accessType = "aws_iam"; // or "azure_ad" or "gcp"
-CloudIdProvider provider = CloudProviderFactory.getCloudIdProvider(accessType);
-String cloudId = provider.getCloudId();
-```
-
-With Akeyless SDK (example):
-
-```java
 import io.akeyless.client.ApiClient;
 import io.akeyless.client.Configuration;
+import io.akeyless.client.model.*;
 import io.akeyless.client.api.V2Api;
-import io.akeyless.client.model.Auth;
-import io.akeyless.client.model.AuthOutput;
 
-ApiClient client = Configuration.getDefaultApiClient();
-client.setBasePath("https://api.akeyless.io");
-V2Api api = new V2Api(client);
+public class Main {
+    public static void main(String[] argv) {
+        // Use azure_ad/aws_iam/gcp, according to your cloud provider
+        String accessType = "azure_ad";
+        CloudIdProvider idProvider = CloudProviderFactory.getCloudIdProvider(accessType);
+        try {
+            String cloudId = idProvider.getCloudId();
 
-Auth auth = new Auth();
-auth.accessId("<Your access id>");
-auth.accessType(accessType);
-auth.cloudId(cloudId);
-AuthOutput out = api.auth(auth);
-```
+            ApiClient client = Configuration.getDefaultApiClient();
+            client.setBasePath("https://api.akeyless.io");
+
+            V2Api api = new V2Api(client);
+            Auth auth = new Auth();
+            auth.accessId("<Your auth method access id>");
+            auth.accessType(accessType);
+            auth.cloudId(cloudId);
+
+            AuthOutput result = api.auth(auth);
+
+
+            ListItems listBody = new ListItems();
+            listBody.setToken(result.getToken());
+            ListItemsInPathOutput listOut = api.listItems(listBody);
+            System.out.println(listOut.getItems().size());
+        } catch (ApiException e) {
+            System.err.println("Status code: " + e.getCode());
+            System.err.println("Reason: " + e.getResponseBody());
+            System.err.println("Response headers: " + e.getResponseHeaders());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("Reason: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}
+ ```
 
 ## Providers
 
