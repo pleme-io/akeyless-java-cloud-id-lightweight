@@ -1,6 +1,6 @@
 package io.akeyless.cloudid.aws;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.jr.ob.JSON;
 import io.akeyless.cloudid.http.HttpResponse;
 import io.akeyless.cloudid.http.HttpTransport;
 import io.akeyless.cloudid.http.JdkHttpTransport;
@@ -56,9 +56,9 @@ public class AwsCredentialResolver {
         String roleName = httpGet("http://169.254.169.254/latest/meta-data/iam/security-credentials/", token);
         String credsJson = httpGet("http://169.254.169.254/latest/meta-data/iam/security-credentials/" + roleName, token);
 
-        // Parse JSON (using manual parsing or Jackson if needed)
+        // Parse JSON using jackson-jr
         @SuppressWarnings("unchecked")
-        Map<String, Object> json = new com.fasterxml.jackson.databind.ObjectMapper().readValue(credsJson, Map.class);
+        Map<String, Object> json = (Map<String, Object>) JSON.std.mapFrom(credsJson);
 
         return new AwsCredentials(
                 (String) json.get("AccessKeyId"), (String) json.get("SecretAccessKey"), (String) json.get("Token"));
@@ -89,7 +89,7 @@ public class AwsCredentialResolver {
             throw new RuntimeException("Failed to fetch ECS credentials from " + urlStr);
         }
         @SuppressWarnings("unchecked")
-        Map<String, Object> json = new ObjectMapper().readValue(res.getBody(), Map.class);
+        Map<String, Object> json = (Map<String, Object>) JSON.std.mapFrom(res.getBody());
         return new AwsCredentials(
                 (String) json.get("AccessKeyId"), (String) json.get("SecretAccessKey"), (String) json.get("Token"));
     }

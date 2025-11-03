@@ -7,12 +7,14 @@ import io.akeyless.cloudid.http.JdkHttpTransport;
 import io.akeyless.cloudid.util.Utils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class GcpCloudIdProvider implements CloudIdProvider {
     private static final String IDENTITY_URL =
-            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=https%3A%2F%2Fapi.akeyless.io&format=full";
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=akeyless.io&format=full";
 
 
     private final HttpTransport http;
@@ -37,6 +39,6 @@ public final class GcpCloudIdProvider implements CloudIdProvider {
         if (token == null || token.isEmpty()) {
             throw new IOException("GCP identity token response is empty");
         }
-        return token;
+        return Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -4,7 +4,7 @@ import io.akeyless.cloudid.CloudIdProvider;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.jr.ob.JSON;
 import java.net.URI;
 import java.security.MessageDigest;
 import java.time.ZoneOffset;
@@ -91,8 +91,7 @@ public final class AwsIamCloudIdProvider implements CloudIdProvider {
         headers.put("Authorization", Collections.singletonList(authorizationHeader));
 
         // Now build the final output (like Go version)
-        ObjectMapper mapper = new ObjectMapper();
-        String headersJson = mapper.writeValueAsString(headers);
+        String headersJson = JSON.std.asString(headers);
 
         Map<String, String> awsData = new LinkedHashMap<>();
         awsData.put("sts_request_method", "POST");
@@ -100,7 +99,7 @@ public final class AwsIamCloudIdProvider implements CloudIdProvider {
         awsData.put("sts_request_body", Base64.getEncoder().encodeToString(bodyBytes));
         awsData.put("sts_request_headers", Base64.getEncoder().encodeToString(headersJson.getBytes(UTF_8)));
 
-        String awsDataJson = mapper.writeValueAsString(awsData);
+        String awsDataJson = JSON.std.asString(awsData);
         return Base64.getEncoder().encodeToString(awsDataJson.getBytes(UTF_8));
     }
 

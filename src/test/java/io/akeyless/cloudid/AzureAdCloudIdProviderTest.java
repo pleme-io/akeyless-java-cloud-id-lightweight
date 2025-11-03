@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Collections;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,7 +24,8 @@ public class AzureAdCloudIdProviderTest {
 
         AzureAdCloudIdProvider provider = new AzureAdCloudIdProvider(http);
         String cloudId = provider.getCloudId();
-        assertEquals("abc123", cloudId);
+        String expected = Base64.getEncoder().encodeToString("abc123".getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, cloudId);
     }
 }
 

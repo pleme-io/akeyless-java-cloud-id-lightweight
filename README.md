@@ -1,6 +1,6 @@
 # akeyless-java-cloud-id (lightweight)
 
-A lightweight Java 17 library that retrieves CloudId for authenticating with Akeyless using cloud authorization providers (AWS IAM, Azure AD Managed Identity, GCP Workload Identity). It mirrors the structure of the upstream project and uses only JDK HttpURLConnection for HTTP. JSON handling uses Jackson (bundled as a dependency).
+A lightweight Java 17 library that retrieves CloudId for authenticating with Akeyless using cloud authorization providers (AWS IAM, Azure AD Managed Identity, GCP Workload Identity). It mirrors the structure of the upstream project and uses the standard Java HttpClient for HTTP. JSON handling uses jackson-jr (lightweight).
 
 - Reference structure: [akeyless-java-cloud-id](https://github.com/akeylesslabs/akeyless-java-cloud-id/)
 
@@ -75,8 +75,8 @@ AuthOutput out = api.auth(auth);
 ## Providers
 
 - aws_iam: Builds a SigV4-signed STS GetCallerIdentity request bundle (base64-encoded JSON containing method, URL, body and headers). Credentials are resolved from environment variables, then ECS container credentials, then EC2 IMDSv2.
-- azure_ad: Retrieves Managed Identity access_token from Azure Instance Metadata Service (raw token string).
-- gcp: Retrieves identity token from GCP metadata server (raw JWT string).
+- azure_ad: Retrieves Managed Identity access_token from Azure Instance Metadata Service (base64-encoded string).
+- gcp: Retrieves identity token from GCP metadata server (base64-encoded string).
 
 Notes for AWS:
 - Environment variables must include both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` (and `AWS_SESSION_TOKEN` for temporary creds). If missing, the resolver falls back to ECS/IMDS.
