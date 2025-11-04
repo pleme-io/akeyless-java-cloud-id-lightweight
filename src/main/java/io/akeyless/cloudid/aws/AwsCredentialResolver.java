@@ -4,7 +4,6 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import io.akeyless.cloudid.http.HttpResponse;
 import io.akeyless.cloudid.http.HttpTransport;
 import io.akeyless.cloudid.http.JdkHttpTransport;
-import io.akeyless.cloudid.util.Utils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,7 +66,7 @@ public class AwsCredentialResolver {
     private String fetchImdsV2Token() throws Exception {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("X-aws-ec2-metadata-token-ttl-seconds", "21600");
-        HttpResponse res = http.put("http://169.254.169.254/latest/api/token", headers, "", Utils.CONNECT_TIMEOUT_MS, Utils.READ_TIMEOUT_MS);
+        HttpResponse res = http.put("http://169.254.169.254/latest/api/token", headers, "", HttpTransport.CONNECT_TIMEOUT_MS, HttpTransport.READ_TIMEOUT_MS);
         if (res.getStatusCode() != 200) {
             throw new RuntimeException("Failed to fetch IMDSv2 token");
         }
@@ -76,7 +75,7 @@ public class AwsCredentialResolver {
 
     private String httpGet(String url, String imdsToken) throws Exception {
         Map<String, String> headers = imdsToken == null ? Collections.<String, String>emptyMap() : singletonHeader("X-aws-ec2-metadata-token", imdsToken);
-        HttpResponse res = http.get(url, headers, Utils.CONNECT_TIMEOUT_MS, Utils.READ_TIMEOUT_MS);
+        HttpResponse res = http.get(url, headers, HttpTransport.CONNECT_TIMEOUT_MS, HttpTransport.READ_TIMEOUT_MS);
         if (res.getStatusCode() != 200) {
             throw new RuntimeException("Failed to fetch metadata from " + url);
         }
@@ -84,7 +83,7 @@ public class AwsCredentialResolver {
     }
 
     private AwsCredentials fetchCredentialsFromMetadataService(String urlStr) throws Exception {
-        HttpResponse res = http.get(urlStr, Collections.<String, String>emptyMap(), Utils.CONNECT_TIMEOUT_MS, Utils.READ_TIMEOUT_MS);
+        HttpResponse res = http.get(urlStr, Collections.<String, String>emptyMap(), HttpTransport.CONNECT_TIMEOUT_MS, HttpTransport.READ_TIMEOUT_MS);
         if (res.getStatusCode() != 200) {
             throw new RuntimeException("Failed to fetch ECS credentials from " + urlStr);
         }
