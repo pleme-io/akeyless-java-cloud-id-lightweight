@@ -5,6 +5,11 @@ import io.akeyless.cloudid.http.HttpResponse;
 import io.akeyless.cloudid.http.HttpTransport;
 import io.akeyless.cloudid.http.JdkHttpTransport;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +46,12 @@ public class AwsCredentialResolver {
 
         if (accessKey != null && accessKey.length() > 0 && secretKey != null && secretKey.length() > 0) {
             return new AwsCredentials(accessKey, secretKey, sessionToken);
+        }
+
+        // 1b. Shared credentials/config profile (~/.aws/credentials or ~/.aws/config)
+        AwsCredentials profileCreds = loadFromAwsProfile();
+        if (profileCreds != null) {
+            return profileCreds;
         }
 
         // 2. ECS Container Credentials (via AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)
@@ -97,5 +108,92 @@ public class AwsCredentialResolver {
         Map<String, String> m = new HashMap<String, String>();
         m.put(k, v);
         return m;
+    }
+
+    private AwsCredentials loadFromAwsProfile() {
+        String profile = firstNonEmpty(System.getenv("AWS_PROFILE"), System.getenv("AWS_DEFAULT_PROFILE"), "default");
+        // Try shared credentials file first
+        String credPath = System.getenv("AWS_SHARED_CREDENTIALS_FILE");
+        if (credPath == null || credPath.isEmpty()) {
+            String home = System.getProperty("user.home");
+            if (home != null && !home.isEmpty()) {
+                credPath = home + File.separator + ".aws" + File.separator + "credentials";
+            }
+        }
+        AwsCredentials creds = readProfileFromIni(credPath, profile, /*sectionPrefix*/ null);
+        if (creds != null) {
+            return creds;
+        }
+        // Fallback to config file format with [profile <name>] sections
+        String cfgPath = System.getenv("AWS_CONFIG_FILE");
+        if (cfgPath == null || cfgPath.isEmpty()) {
+            String home = System.getProperty("user.home");
+            if (home != null && !home.isEmpty()) {
+                cfgPath = home + File.separator + ".aws" + File.separator + "config";
+            }
+        }
+        return readProfileFromIni(cfgPath, profile, /*sectionPrefix*/ "profile ");
+    }
+
+    private static AwsCredentials readProfileFromIni(String path, String profile, String sectionPrefix) {
+        if (path == null || path.isEmpty()) {
+            return null;
+        }
+        File f = new File(path);
+        if (!f.exists() || !f.isFile()) {
+            return null;
+        }
+        String targetSection = profile == null || profile.isEmpty() ? "default" : profile;
+        if (sectionPrefix != null) {
+            targetSection = sectionPrefix + targetSection;
+        }
+
+        String currentSection = null;
+        String accessKey = null;
+        String secretKey = null;
+        String sessionToken = null;
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8))) {
+            String raw;
+            while ((raw = br.readLine()) != null) {
+                String line = raw.trim();
+                if (line.isEmpty() || line.startsWith("#") || line.startsWith(";")) {
+                    continue;
+                }
+                if (line.startsWith("[") && line.endsWith("]")) {
+                    currentSection = line.substring(1, line.length() - 1).trim();
+                    continue;
+                }
+                if (!targetSection.equals(currentSection)) {
+                    continue;
+                }
+                int eq = line.indexOf('=');
+                if (eq <= 0) {
+                    continue;
+                }
+                String key = line.substring(0, eq).trim();
+                String value = line.substring(eq + 1).trim();
+                if ("aws_access_key_id".equals(key)) {
+                    accessKey = value;
+                } else if ("aws_secret_access_key".equals(key)) {
+                    secretKey = value;
+                } else if ("aws_session_token".equals(key) || "aws_security_token".equals(key)) {
+                    sessionToken = value;
+                }
+            }
+        } catch (Exception ignore) {
+            return null;
+        }
+
+        if (accessKey != null && accessKey.length() > 0 && secretKey != null && secretKey.length() > 0) {
+            return new AwsCredentials(accessKey, secretKey, sessionToken);
+        }
+        return null;
+    }
+
+    private static String firstNonEmpty(String a, String b, String c) {
+        if (a != null && !a.isEmpty()) return a;
+        if (b != null && !b.isEmpty()) return b;
+        return c;
     }
 }
