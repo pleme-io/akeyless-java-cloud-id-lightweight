@@ -4,7 +4,6 @@ import io.akeyless.cloudid.CloudIdProvider;
 import io.akeyless.cloudid.http.HttpResponse;
 import io.akeyless.cloudid.http.HttpTransport;
 import io.akeyless.cloudid.http.JdkHttpTransport;
-import io.akeyless.cloudid.util.Utils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +30,7 @@ public final class GcpCloudIdProvider implements CloudIdProvider {
     public String getCloudId() throws IOException {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Metadata-Flavor", "Google");
-        HttpResponse res = http.get(IDENTITY_URL, headers, Utils.CONNECT_TIMEOUT_MS, Utils.READ_TIMEOUT_MS);
+        HttpResponse res = http.get(IDENTITY_URL, headers, HttpTransport.CONNECT_TIMEOUT_MS, HttpTransport.READ_TIMEOUT_MS);
         if (res.getStatusCode() / 100 != 2) {
             throw new IOException("Failed to get GCP identity token: HTTP " + res.getStatusCode());
         }
