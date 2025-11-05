@@ -97,7 +97,10 @@ public class Main {
 - gcp: Retrieves identity token from GCP metadata server (base64-encoded string).
 
 Notes for AWS:
-- Environment variables must include both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` (and `AWS_SESSION_TOKEN` for temporary creds). If missing, the resolver falls back to ECS/IMDS.
+- Credential resolution order: environment variables → shared credentials files (`~/.aws/credentials`) / config (`~/.aws/config`) → ECS container credentials → EC2 IMDSv2.
+- Profiles: select via `AWS_PROFILE` or `AWS_DEFAULT_PROFILE` (default: `default`). Override file paths with `AWS_SHARED_CREDENTIALS_FILE` and `AWS_CONFIG_FILE`.
+- Environment variables (if set) take precedence over profiles.
+- For temporary credentials include `AWS_SESSION_TOKEN`.
 
 ## Testing
 

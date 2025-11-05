@@ -29,23 +29,37 @@ public class AwsCredentialResolver {
     }
 
     private final HttpTransport http;
+    private final String overrideProfileName;
+    private final String overrideCredentialsPath;
+    private final String overrideConfigPath;
+    private final boolean ignoreEnv;
 
     public AwsCredentialResolver() {
         this(new JdkHttpTransport());
     }
 
     public AwsCredentialResolver(HttpTransport http) {
+        this(http, null, null, null, false);
+    }
+
+    public AwsCredentialResolver(HttpTransport http, String overrideProfileName, String overrideCredentialsPath,
+                                 String overrideConfigPath, boolean ignoreEnv) {
         this.http = http;
+        this.overrideProfileName = overrideProfileName;
+        this.overrideCredentialsPath = overrideCredentialsPath;
+        this.overrideConfigPath = overrideConfigPath;
+        this.ignoreEnv = ignoreEnv;
     }
 
     public AwsCredentials resolve() throws Exception {
-        // 1. Environment Variables
-        String accessKey = System.getenv("AWS_ACCESS_KEY_ID");
-        String secretKey = System.getenv("AWS_SECRET_ACCESS_KEY");
-        String sessionToken = System.getenv("AWS_SESSION_TOKEN"); // optional
-
-        if (accessKey != null && accessKey.length() > 0 && secretKey != null && secretKey.length() > 0) {
-            return new AwsCredentials(accessKey, secretKey, sessionToken);
+        // 1. Environment Variables (skip if ignoreEnv is true)
+        if (!ignoreEnv) {
+            String accessKey = System.getenv("AWS_ACCESS_KEY_ID");
+            String secretKey = System.getenv("AWS_SECRET_ACCESS_KEY");
+            String sessionToken = System.getenv("AWS_SESSION_TOKEN"); // optional
+            if (accessKey != null && accessKey.length() > 0 && secretKey != null && secretKey.length() > 0) {
+                return new AwsCredentials(accessKey, secretKey, sessionToken);
+            }
         }
 
         // 1b. Shared credentials/config profile (~/.aws/credentials or ~/.aws/config)
@@ -111,9 +125,13 @@ public class AwsCredentialResolver {
     }
 
     private AwsCredentials loadFromAwsProfile() {
-        String profile = firstNonEmpty(System.getenv("AWS_PROFILE"), System.getenv("AWS_DEFAULT_PROFILE"), "default");
+        String profile = (overrideProfileName != null && !overrideProfileName.isEmpty())
+                ? overrideProfileName
+                : firstNonEmpty(System.getenv("AWS_PROFILE"), System.getenv("AWS_DEFAULT_PROFILE"), "default");
         // Try shared credentials file first
-        String credPath = System.getenv("AWS_SHARED_CREDENTIALS_FILE");
+        String credPath = (overrideCredentialsPath != null && !overrideCredentialsPath.isEmpty())
+                ? overrideCredentialsPath
+                : System.getenv("AWS_SHARED_CREDENTIALS_FILE");
         if (credPath == null || credPath.isEmpty()) {
             String home = System.getProperty("user.home");
             if (home != null && !home.isEmpty()) {
@@ -125,7 +143,9 @@ public class AwsCredentialResolver {
             return creds;
         }
         // Fallback to config file format with [profile <name>] sections
-        String cfgPath = System.getenv("AWS_CONFIG_FILE");
+        String cfgPath = (overrideConfigPath != null && !overrideConfigPath.isEmpty())
+                ? overrideConfigPath
+                : System.getenv("AWS_CONFIG_FILE");
         if (cfgPath == null || cfgPath.isEmpty()) {
             String home = System.getProperty("user.home");
             if (home != null && !home.isEmpty()) {
