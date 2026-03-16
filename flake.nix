@@ -19,7 +19,7 @@
         pname = "cloudid-lightweight";
         version = "0.0.0-dev";
         src = self;
-        mvnHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # TODO: set correct hash
+        mvnHash = ""; # requires nix build to compute
         description = "Lightweight CloudId providers for Akeyless (AWS, Azure, GCP) using JDK HTTP";
         homepage = "https://github.com/pleme-io/akeyless-java-cloud-id-lightweight";
       };
