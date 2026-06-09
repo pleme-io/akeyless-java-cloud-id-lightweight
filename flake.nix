@@ -1,8 +1,8 @@
 {
   description = "Lightweight CloudId providers for Akeyless (AWS, Azure, GCP) using JDK HTTP";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
-    substrate = { url = "github:pleme-io/substrate"; inputs.nixpkgs.follows = "nixpkgs"; };
+    nixpkgs.follows = "substrate/nixpkgs";
+    substrate = { url = "github:pleme-io/substrate";};
     flake-utils.url = "github:numtide/flake-utils";
   };
   outputs = inputs: (import "${inputs.substrate}/lib/repo-flake.nix" {
